@@ -101,4 +101,3 @@ Contact / Next steps
 - To harden: limit SSH, enable private-only subnets for workloads, and move state to a remote backend.
 - To extend: add user-data provisioning, CloudWatch logs, or an application artifact deployment.
 
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
