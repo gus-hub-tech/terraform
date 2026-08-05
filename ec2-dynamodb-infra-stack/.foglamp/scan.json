@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "project": {
+    "name": "learn-terraform",
+    "slug": "learn-terraform",
+    "tagline": "Tutorial AWS stack: EC2, VPC, DynamoDB via Terraform",
+    "iconDomain": "terraform.io",
+    "date": "2026-07-28"
+  },
+  "stats": { "agents": 0, "models": 0, "tools": 0, "integrations": 1 },
+  "topModels": [],
+  "topTools": [],
+  "topIntegrations": [
+    { "id": "aws", "label": "AWS", "domain": "aws.amazon.com" }
+  ],
+  "graph": {
+    "nodes": [
+      { "id": "cli", "label": "Terraform CLI", "kind": "entry", "sub": "apply / plan / destroy",
+        "sourceRef": "README.md",
+        "detail": "Main entry point; provisions AWS resources via terraform init, plan, apply" },
+      { "id": "provider", "label": "AWS Provider", "kind": "external", "domain": "hashicorp.com",
+        "sub": "hashicorp/aws ~> 5.92",
+        "detail": "Terraform AWS provider, locked at v5.100.0" },
+      { "id": "vpc_mod", "label": "VPC Module", "kind": "service", "domain": "registry.terraform.io",
+        "sub": "terraform-aws-modules/vpc v5.19",
+        "sourceRef": "network.tf",
+        "detail": "Community VPC module creating VPC, public + private subnets, IGW, route tables" },
+      { "id": "ec2", "label": "EC2 Instance", "kind": "service",
+        "sub": "Ubuntu 22.04 t3.small",
+        "sourceRef": "main.tf",
+        "detail": "Public-facing Ubuntu instance with IAM profile, placed in public subnet" },
+      { "id": "sg", "label": "Security Group", "kind": "service",
+        "sub": "SSH / HTTP / HTTPS ingress",
+        "sourceRef": "security.tf",
+        "detail": "Inbound rules for SSH, HTTP, HTTPS; all outbound allowed" },
+      { "id": "dynamo_tbl", "label": "DynamoDB Table", "kind": "service",
+        "sub": "Provisioned, 5 RCU / 5 WCU",
+        "sourceRef": "database.tf",
+        "detail": "Provisioned NoSQL table with numeric hash key, tagged as staging" },
+      { "id": "iam", "label": "IAM Policies", "kind": "service",
+        "sub": "EC2 role + DynamoDB access",
+        "sourceRef": "policy.tf",
+        "detail": "EC2 instance role with read/write permissions on DynamoDB table" },
+      { "id": "state", "label": "Local State", "kind": "store",
+        "sub": "terraform.tfstate",
+        "sourceRef": "terraform.tfstate",
+        "detail": "Local backend tracking all managed resources; no remote state configured" },
+      { "id": "aws_dynamo", "label": "DynamoDB", "kind": "store", "domain": "aws.amazon.com",
+        "sub": "Managed NoSQL" },
+      { "id": "aws_ec2", "label": "EC2 Ubuntu", "kind": "store", "domain": "aws.amazon.com",
+        "sub": "Public compute" },
+      { "id": "aws_vpc", "label": "AWS VPC", "kind": "store", "domain": "aws.amazon.com",
+        "sub": "Isolated network" }
+    ],
+    "edges": [
+      { "from": "cli", "to": "provider", "kind": "calls", "label": "terraform apply" },
+      { "from": "provider", "to": "vpc_mod", "kind": "calls" },
+      { "from": "provider", "to": "ec2", "kind": "calls" },
+      { "from": "provider", "to": "sg", "kind": "calls" },
+      { "from": "provider", "to": "dynamo_tbl", "kind": "calls" },
+      { "from": "provider", "to": "iam", "kind": "calls" },
+      { "from": "ec2", "to": "sg", "kind": "reads", "label": "attaches security group" },
+      { "from": "ec2", "to": "iam", "kind": "reads", "label": "uses instance profile" },
+      { "from": "iam", "to": "dynamo_tbl", "kind": "reads", "label": "grants table access" },
+      { "from": "ec2", "to": "vpc_mod", "kind": "reads", "label": "placed in public subnet" },
+      { "from": "provider", "to": "state", "kind": "writes", "label": "updates state file" },
+      { "from": "vpc_mod", "to": "aws_vpc", "kind": "writes" },
+      { "from": "ec2", "to": "aws_ec2", "kind": "writes" },
+      { "from": "dynamo_tbl", "to": "aws_dynamo", "kind": "writes" }
+    ]
+  }
+}
